@@ -1,116 +1,49 @@
-// ========== 一键自动更新系统 (请勿修改) ==========
-var 更新地址 = "https://您的文件直链地址"; // 【重要】请替换成您自己的文件直链
+// === 自动更新系统 ===
+var 更新配置 = {
+    脚本直链: "https://raw.githubusercontent.com/mama18663257321-sudo/jianying-script/refs/heads/main/%E5%89%AA%E6%98%A0%E8%87%AA%E5%8A%A8%E5%8C%96%E8%84%9A%E6%9C%AC.js",
+    当前版本: "1.0.0"
+};
 
-// 创建更新悬浮窗
-var 更新悬浮窗 = floaty.rawWindow(
-    <frame gravity="center" bg="#AA000000">
-        <vertical padding="16" bg="#FFFFFF" w="280" h="160">
-            <text text="发现新版本" textSize="18sp" textColor="#000000" gravity="center"/>
-            <text id="更新信息" text="正在检查更新..." textSize="14sp" textColor="#666666" gravity="center" marginTop="8"/>
-            <horizontal gravity="center" marginTop="16">
-                <button id="立即更新" text="立即更新" w="100" h="40" bg="#2196F3" textColor="#FFFFFF"/>
-                <button id="稍后更新" text="稍后更新" w="100" h="40" bg="#FFC107" textColor="#000000" marginLeft="12"/>
-            </horizontal>
-            <progressbar id="更新进度" max="100" progress="0" style="?android:attr/progressBarStyleHorizontal" marginTop="12"/>
-        </vertical>
-    </frame>
-);
-
-// 初始隐藏更新窗口
-更新悬浮窗.setPosition(0, -1000);
-
-// 检查并执行更新
+// 自动检查更新
 threads.start(function() {
-    执行一键更新();
+    执行自动更新();
 });
 
-function 执行一键更新() {
+function 执行自动更新() {
     try {
-        // 显示更新窗口
-        ui.run(() => {
-            更新悬浮窗.setPosition(device.width / 2 - 140, device.height / 2 - 80);
-        });
-        
-        // 设置按钮事件
-        更新悬浮窗.立即更新.click(() => {
-            threads.start(下载并更新脚本);
-        });
-        
-        更新悬浮窗.稍后更新.click(() => {
-            ui.run(() => {
-                更新悬浮窗.setPosition(0, -1000);
-            });
-        });
-        
-        // 检查更新
-        更新悬浮窗.更新信息.setText("正在检查更新...");
-        var 响应 = http.get(更新地址);
-        if (响应.statusCode != 200) {
-            更新悬浮窗.更新信息.setText("检查更新失败，使用当前版本");
-            sleep(2000);
-            ui.run(() => { 更新悬浮窗.setPosition(0, -1000); });
-            return;
-        }
+        // 获取网络最新脚本
+        var 响应 = http.get(更新配置.脚本直链);
+        if (响应.statusCode !== 200) return;
         
         var 网络脚本 = 响应.body.string();
         var 当前脚本 = engines.myEngine().getSource() + "";
         
+        // 比较内容，如果不同就更新
         if (网络脚本 !== 当前脚本) {
-            更新悬浮窗.更新信息.setText("发现新版本！点击立即更新");
-        } else {
-            更新悬浮窗.更新信息.setText("当前已是最新版本");
-            sleep(2000);
-            ui.run(() => { 更新悬浮窗.setPosition(0, -1000); });
+            // 显示更新对话框
+            ui.run(() => {
+                var 是否更新 = confirm(
+                    "发现新版本！\n\n" +
+                    "修复了已知问题，优化了性能\n\n" +
+                    "是否立即更新？"
+                );
+                
+                if (是否更新) {
+                    // 下载并执行新脚本
+                    var 文件路径 = "/sdcard/剪映自动化脚本.js";
+                    files.write(文件路径, 网络脚本);
+                    
+                    // 运行新脚本，退出当前
+                    engines.execScriptFile(文件路径);
+                    exit();
+                }
+            });
         }
-        
     } catch (e) {
-        // 如果更新过程出错，隐藏窗口并继续运行旧版本
-        ui.run(() => { 更新悬浮窗.setPosition(0, -1000); });
+        // 静默失败，不影响主程序运行
     }
 }
-
-function 下载并更新脚本() {
-    try {
-        ui.run(() => {
-            更新悬浮窗.立即更新.setEnabled(false);
-            更新悬浮窗.更新信息.setText("开始下载新版本...");
-        });
-        
-        var 响应 = http.get(更新地址);
-        if (响应.statusCode != 200) {
-            toast("下载失败");
-            return;
-        }
-        
-        var 网络脚本 = 响应.body.string();
-        var 文件路径 = "/sdcard/剪映自动化脚本.js";
-        
-        // 保存新脚本
-        files.write(文件路径, 网络脚本);
-        
-        ui.run(() => {
-            更新悬浮窗.更新信息.setText("更新完成！正在重启...");
-        });
-        
-        sleep(1000);
-        
-        // 运行新脚本并退出当前
-        engines.execScriptFile(文件路径);
-        exit();
-        
-    } catch (e) {
-        toast("更新失败: " + e);
-    } finally {
-        ui.run(() => {
-            更新悬浮窗.立即更新.setEnabled(true);
-        });
-    }
-}
-// ========== 一键自动更新系统结束 ==========
-
-// 【您原有的脚本内容从这里开始...】
-// 比如您之前有的：var 调试模式 = true; 等等...
-
+// === 自动更新系统结束 ===
 
 // === 剪映自动化脚本 - 按钮选择调试版 ===
 // 作者：小猫剪映自动化
