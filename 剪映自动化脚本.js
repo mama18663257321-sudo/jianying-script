@@ -1,6 +1,6 @@
 // === 自动更新系统 ===
 var 更新配置 = {
-    脚本直链: "https://raw.githubusercontent.com/mama18663257321-sudo/jianying-script/refs/heads/main/%E5%89%AA%E6%98%A0%E8%87%AA%E5%8A%A8%E5%8C%96%E8%84%9A%E6%9C%AC.js",
+    脚本直链: "https://raw.fastgit.org/mama18663257321-sudo/jianying-script/main/剪映自动化脚本.js",
     当前版本: "1.0.2"
 };
 
