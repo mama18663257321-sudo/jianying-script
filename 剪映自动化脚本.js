@@ -1,49 +1,8 @@
 // === 自动更新系统 ===
 var 更新配置 = {
     脚本直链: "https://raw.githubusercontent.com/mama18663257321-sudo/jianying-script/refs/heads/main/%E5%89%AA%E6%98%A0%E8%87%AA%E5%8A%A8%E5%8C%96%E8%84%9A%E6%9C%AC.js",
-    当前版本: "1.0.0"
+    当前版本: "1.0.2"
 };
-
-// 自动检查更新
-threads.start(function() {
-    执行自动更新();
-});
-
-function 执行自动更新() {
-    try {
-        // 获取网络最新脚本
-        var 响应 = http.get(更新配置.脚本直链);
-        if (响应.statusCode !== 200) return;
-        
-        var 网络脚本 = 响应.body.string();
-        var 当前脚本 = engines.myEngine().getSource() + "";
-        
-        // 比较内容，如果不同就更新
-        if (网络脚本 !== 当前脚本) {
-            // 显示更新对话框
-            ui.run(() => {
-                var 是否更新 = confirm(
-                    "发现新版本！\n\n" +
-                    "修复了已知问题，优化了性能\n\n" +
-                    "是否立即更新？"
-                );
-                
-                if (是否更新) {
-                    // 下载并执行新脚本
-                    var 文件路径 = "/sdcard/剪映自动化脚本.js";
-                    files.write(文件路径, 网络脚本);
-                    
-                    // 运行新脚本，退出当前
-                    engines.execScriptFile(文件路径);
-                    exit();
-                }
-            });
-        }
-    } catch (e) {
-        // 静默失败，不影响主程序运行
-    }
-}
-// === 自动更新系统结束 ===
 
 // === 剪映自动化脚本 - 按钮选择调试版 ===
 // 作者：小猫剪映自动化
@@ -53,83 +12,91 @@ var 调试模式 = true;
 var 直接跳转到步骤 = 10;
 var 循环次数 = 1; // 默认循环1次
 
-// === 调试开关 ===
-var 调试模式 = true;
-var 直接跳转到步骤 = 10;
+// 全局变量
+var 悬浮窗 = null;
+var 日志内容 = "✅ 准备就绪..."; // 初始化日志内容
 
-// 创建悬浮窗
-var 悬浮窗 = floaty.window(
+// 先询问循环次数
+var 循环输入框 = dialogs.rawInput("请输入循环次数", "1");
+if (循环输入框 && 循环输入框 !== "") {
+    循环次数 = parseInt(循环输入框) || 1;
+}
+
+// 创建主悬浮窗
+悬浮窗 = floaty.window(
     <frame bg="#DD000000">
-        <vertical padding="8">
-            <text text="剪映自动化" textSize="16sp" textColor="#FFFFFF" bg="#444444" padding="4 8" w="*"/>
-            <text id="日志" text="准备就绪..." textSize="14sp" textColor="#00FF00" padding="4" lineHeight="18" maxLines="6"/>
+        <vertical padding="12" w="180">
+            <text text="🎬 剪映自动化" textSize="16sp" textColor="#FFFFFF" bg="#34495E" padding="8 12" w="*" gravity="center"/>
+            <text id="日志" text="{日志内容}" textSize="12sp" textColor="#00FF00" padding="6" lineHeight="15" maxLines="6" bg="#2C3E50"/>
             
-            <text text="选择调试步骤:" textSize="14sp" textColor="#FFFFFF" padding="4 0"/>
+            <text text="📋 选择调试步骤:" textSize="12sp" textColor="#FFFFFF" padding="4 0" marginTop="4"/>
             
             <!-- 第一行步骤按钮 -->
             <horizontal>
-                <button id="步骤1" text="1" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤2" text="2" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤3" text="3" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤4" text="4" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤5" text="5" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
+                <button id="步骤1" text="1" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤2" text="2" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤3" text="3" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤4" text="4" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤5" text="5" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
             </horizontal>
             
             <!-- 第二行步骤按钮 -->
             <horizontal>
-                <button id="步骤6" text="6" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤7" text="7" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤8" text="8" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤9" text="9" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤10" text="10" w="28" h="28" bg="#4444FF" textColor="#FFFFFF" textSize="10sp"/>
+                <button id="步骤6" text="6" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤7" text="7" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤8" text="8" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤9" text="9" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤10" text="10" w="28" h="28" bg="#3498DB" textColor="#FFFFFF" textSize="8sp"/>
             </horizontal>
             
             <!-- 第三行步骤按钮 -->
             <horizontal>
-                <button id="步骤11" text="11" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤12" text="12" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤13" text="13" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤14" text="14" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤15" text="15" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
+                <button id="步骤11" text="11" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤12" text="12" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤13" text="13" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤14" text="14" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤15" text="15" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
             </horizontal>
             
             <!-- 第四行步骤按钮 -->
             <horizontal>
-                <button id="步骤16" text="16" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤17" text="17" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤18" text="18" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤19" text="19" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
-                <button id="步骤20" text="20" w="28" h="28" bg="#666666" textColor="#FFFFFF" textSize="10sp"/>
+                <button id="步骤16" text="16" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤17" text="17" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤18" text="18" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤19" text="19" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
+                <button id="步骤20" text="20" w="28" h="28" bg="#7F8C8D" textColor="#FFFFFF" textSize="8sp"/>
             </horizontal>
             
-            <!-- 控制按钮 - 现在有停止按钮了 -->
-            <horizontal>
-                <button id="完整运行" text="完整运行" w="80" h="35" bg="#44AA44" textColor="#FFFFFF" textSize="12sp"/>
-                <button id="停止" text="停止脚本" w="80" h="35" bg="#FF4444" textColor="#FFFFFF" textSize="12sp"/>
+            <!-- 控制按钮 -->
+            <horizontal gravity="center" marginTop="8">
+                <button id="完整运行" text="🎬 完整运行" w="85" h="36" bg="#27AE60" textColor="#FFFFFF" textSize="11sp" marginRight="6"/>
+                <button id="停止" text="🛑 停止" w="85" h="36" bg="#E74C3C" textColor="#FFFFFF" textSize="11sp"/>
             </horizontal>
+            
+            <!-- 更新按钮 -->
+            <button id="手动更新" text="🔄 检查更新" w="*" h="32" bg="#2980B9" textColor="#FFFFFF" textSize="11sp" marginTop="6"/>
         </vertical>
     </frame>
 );
 
 悬浮窗.setPosition(50, 100);
 
-// 添加循环次数输入
-var 循环输入框 = dialogs.rawInput("请输入循环次数", "1");
-if (循环输入框 && 循环输入框 !== "") {
-    循环次数 = parseInt(循环输入框) || 1;
-    显示日志("🔄 设置循环次数: " + 循环次数 + " 次");
-}
+// 等待悬浮窗完全创建
+sleep(1000);
+
+// 初始化日志显示
+更新日志显示();
 
 // 步骤按钮点击事件
 for (var i = 1; i <= 20; i++) {
-    悬浮窗["步骤" + i].click((function(步骤编号) {
-        return function() {
+    (function(步骤编号) {
+        悬浮窗["步骤" + 步骤编号].click(function() {
             // 重置所有按钮颜色
             for (var j = 1; j <= 20; j++) {
-                悬浮窗["步骤" + j].setBackgroundColor(colors.parseColor("#666666"));
+                悬浮窗["步骤" + j].setBackgroundColor(colors.parseColor("#7F8C8D"));
             }
             // 设置当前选中按钮颜色
-            悬浮窗["步骤" + 步骤编号].setBackgroundColor(colors.parseColor("#4444FF"));
+            悬浮窗["步骤" + 步骤编号].setBackgroundColor(colors.parseColor("#3498DB"));
             
             直接跳转到步骤 = 步骤编号;
             显示日志("🚀 选择第" + 步骤编号 + "步");
@@ -137,33 +104,167 @@ for (var i = 1; i <= 20; i++) {
             threads.start(function() {
                 主程序();
             });
-        };
-    })(i));
+        });
+    })(i);
 }
 
 // 控制按钮点击事件
-悬浮窗.完整运行.click(() => {
-    显示日志("🎬 完整运行脚本");
+悬浮窗.完整运行.click(function() {
+    显示日志("🎬 开始完整运行脚本");
     调试模式 = false;
     threads.start(function() {
         主程序();
     });
 });
 
-悬浮窗.停止.click(() => {
+悬浮窗.停止.click(function() {
     显示日志("🛑 手动停止脚本");
     exit();
 });
 
-function 显示日志(信息) {
-    ui.run(() => {
-        var 当前内容 = 悬浮窗.日志.getText();
-        var 日志行数 = 当前内容.split("\n");
-        if(日志行数.length > 6){
-            当前内容 = 日志行数.slice(-6).join("\n");
-        }
-        悬浮窗.日志.setText(当前内容 + "\n" + 信息);
+// 更新按钮点击事件
+悬浮窗.手动更新.click(function() {
+    显示日志("🔍 手动检查更新...");
+    threads.start(function() {
+        手动检查更新();
     });
+});
+
+// 显示欢迎信息
+显示日志("✅ 脚本加载完成");
+显示日志("🔄 循环次数: " + 循环次数 + " 次");
+显示日志("💡 点击步骤按钮开始调试");
+
+// 手动检查更新函数
+function 手动检查更新() {
+    threads.start(function() {
+        try {
+            显示日志("🔄 检查更新中...");
+            
+            var 响应 = http.get(更新配置.脚本直链, {
+                timeout: 10000
+            });
+            
+            if (响应.statusCode !== 200) {
+                显示日志("❌ 检查更新失败");
+                return;
+            }
+            
+            var 网络脚本 = 响应.body.string();
+            var 当前脚本 = engines.myEngine().getSource() + "";
+            
+            // 简单比较前100个字符
+            if (网络脚本.substring(0, 100) !== 当前脚本.substring(0, 100)) {
+                显示日志("🎉 发现新版本！");
+                
+                // 询问是否更新
+                var 是否更新 = confirm("发现新版本，是否更新？");
+                if (是否更新) {
+                    var 文件路径 = "/sdcard/剪映自动化脚本.js";
+                    files.write(文件路径, 网络脚本);
+                    显示日志("✅ 更新完成，正在重启...");
+                    sleep(2000);
+                    engines.execScriptFile(文件路径);
+                    exit();
+                }
+            } else {
+                显示日志("✅ 当前已是最新版本");
+            }
+        } catch (e) {
+            显示日志("❌ 更新检查出错");
+        }
+    });
+}
+
+// 主程序函数
+function 主程序() {
+    try {
+        if (调试模式) {
+            显示日志("🔧 调试模式 - 直接执行第" + 直接跳转到步骤 + "步");
+            
+            switch(直接跳转到步骤) {
+                case 1: 执行第一步(); break;
+                case 2: 执行第二步(); break;
+                case 3: 执行第三步(); break;
+                case 4: 执行第四步(); break;
+                case 5: 执行第五步(); break;
+                case 6: 执行第六步(); break;
+                case 7: 执行第七步(); break;
+                case 8: 执行第八步(); break;
+                case 9: 执行第九步(); break;
+                case 10: 执行第十步(); break;
+                case 11: 执行第十一步(); break;
+                case 12: 执行第十二步(); break;
+                case 13: 执行第十三步(); break;
+                case 14: 执行第十四步(); break;
+                case 15: 执行第十五步(); break;
+                case 16: 执行第十六步(); break;
+                case 17: 执行第十七步(); break;
+                case 18: 执行第十八步(); break;
+                case 19: 执行第十九步(); break;
+                case 20: 执行第二十步(); break;
+                default:
+                    显示日志("❌ 未知的步骤编号: " + 直接跳转到步骤);
+            }
+            return;
+        }
+        
+        // === 完整脚本开始 ===
+        显示日志("🎬 完整脚本开始执行");
+        执行第一步();
+        执行第二步();
+        执行第三步();
+        执行第四步();
+        执行第五步();
+        执行第六步();
+        执行第七步();
+        执行第八步();
+        执行第九步();
+        执行第十步();
+        执行第十一步();
+        执行第十二步();
+        执行第十三步();
+        执行第十四步();
+        执行第十五步();
+        执行第十六步();
+        执行第十七步();
+        执行第十八步();
+        执行第十九步();
+        执行第二十步();
+        
+        显示日志("🎉 所有步骤执行完成！");
+
+    } catch (e) {
+        显示日志("❌ 脚本执行出错: " + e);
+    }
+}
+
+// 安全的显示日志函数
+function 显示日志(信息) {
+    // 更新日志内容
+    日志内容 += "\n" + 信息;
+    
+    // 限制日志行数
+    var 日志行数 = 日志内容.split("\n");
+    if(日志行数.length > 6){
+        日志内容 = 日志行数.slice(-6).join("\n");
+    }
+    
+    // 更新界面显示
+    更新日志显示();
+}
+
+// 更新日志显示（安全的）
+function 更新日志显示() {
+    try {
+        if (悬浮窗 && 悬浮窗.日志) {
+            ui.run(function() {
+                悬浮窗.日志.setText(日志内容);
+            });
+        }
+    } catch (e) {
+        console.log("更新日志显示出错: " + e);
+    }
 }
 
 // 安全的选择器函数
@@ -294,37 +395,43 @@ function 循环查找按钮(按钮名称, 步骤名称, 超时时间) {
     return 找到按钮;
 }
 
-// === 步骤函数定义（1-20步）===
+// === 步骤函数定义（包含实际操作）===
 function 执行第一步() {
     显示日志("🚫 执行第一步：停止抖音应用");
     强制停止单个应用("com.ss.android.ugc.aweme", "抖音");
+    显示日志("✅ 第一步完成");
 }
 
 function 执行第二步() {
     显示日志("🚫 执行第二步：停止剪映应用");
     强制停止单个应用("com.lemon.lv", "剪映");
+    显示日志("✅ 第二步完成");
 }
 
 function 执行第三步() {
     显示日志("🚀 执行第三步：启动剪映APP");
     launch("com.lemon.lv");
     sleep(5000);
+    显示日志("✅ 第三步完成");
 }
 
 function 执行第四步() {
     显示日志("📝 执行第四步：处理启动弹窗");
     sleep(2000);
+    显示日志("✅ 第四步完成");
 }
 
 function 执行第五步() {
     显示日志("🔄 执行第五步：点击立即恢复按钮");
     循环查找按钮("立即恢复", "查找立即恢复按钮", 30000);
+    显示日志("✅ 第五步完成");
 }
 
 function 执行第六步() {
     显示日志("📤 执行第六步：点击导出按钮");
     循环查找按钮("导出", "查找导出按钮", 30000);
     sleep(3000);
+    显示日志("✅ 第六步完成");
 }
 
 function 执行第七步() {
@@ -766,189 +873,62 @@ function 执行第十三步() {
 
 function 执行第十四步() {
     显示日志("🗑️ 执行第十四步：点击删除按钮");
-    
-    // 方法1：直接查找删除文字
     var 删除按钮 = text("删除").findOne(3000) || desc("删除").findOne(3000);
-    
     if (删除按钮) {
         显示日志("🎯 找到删除按钮");
         var 边界 = 删除按钮.bounds();
         click(边界.centerX(), 边界.centerY());
         显示日志("✅ 点击删除按钮成功");
         sleep(2000);
-        显示日志("🚀 第十四步完成 - 删除操作成功");
-        return;
+    } else {
+        显示日志("❌ 未找到删除按钮");
     }
-    
-    // 方法2：查找其他可能的删除文字
-    var 其他删除文字 = ["删除片段", "移除", "删掉", "Delete", "Remove"];
-    for (var i = 0; i < 其他删除文字.length; i++) {
-        var 文字 = 其他删除文字[i];
-        var 按钮 = text(文字).findOne(1000) || desc(文字).findOne(1000);
-        if (按钮) {
-            显示日志("🎯 找到删除按钮: " + 文字);
-            var 边界 = 按钮.bounds();
-            click(边界.centerX(), 边界.centerY());
-            显示日志("✅ 点击删除按钮成功");
-            sleep(2000);
-            显示日志("🚀 第十四步完成 - 通过备选文字删除");
-            return;
-        }
-    }
-    
-    // 方法3：查找垃圾桶图标（通过描述）
-    var 垃圾桶图标 = descMatches(/.*删除.*|.*delete.*|.*remove.*|.*垃圾桶.*/i).findOne(2000);
-    if (垃圾桶图标) {
-        显示日志("🎯 通过描述找到删除图标");
-        var 边界 = 垃圾桶图标.bounds();
-        click(边界.centerX(), 边界.centerY());
-        显示日志("✅ 点击删除图标成功");
-        sleep(2000);
-        显示日志("🚀 第十四步完成 - 通过图标删除");
-        return;
-    }
-    
-    显示日志("❌ 未找到删除按钮");
-    显示日志("⚠️ 第十四步完成 - 但未找到删除按钮");
 }
-
-
 
 function 执行第十五步() {
     显示日志("💾 执行第十五步：点击保存按钮");
-    
-    // 方法1：直接查找保存文字
     var 保存按钮 = text("保存").findOne(3000) || desc("保存").findOne(3000);
-    
     if (保存按钮) {
         显示日志("🎯 找到保存按钮");
         var 边界 = 保存按钮.bounds();
         click(边界.centerX(), 边界.centerY());
         显示日志("✅ 点击保存按钮成功");
         sleep(2000);
-        显示日志("🚀 第十五步完成 - 保存操作成功");
-        return;
+    } else {
+        显示日志("❌ 未找到保存按钮");
     }
-    
-    // 方法2：查找其他可能的保存文字
-    var 其他保存文字 = ["确定", "确认", "完成", "导出", "Save", "OK", "Confirm"];
-    for (var i = 0; i < 其他保存文字.length; i++) {
-        var 文字 = 其他保存文字[i];
-        var 按钮 = text(文字).findOne(1000) || desc(文字).findOne(1000);
-        if (按钮) {
-            显示日志("🎯 找到保存按钮: " + 文字);
-            var 边界 = 按钮.bounds();
-            click(边界.centerX(), 边界.centerY());
-            显示日志("✅ 点击保存按钮成功");
-            sleep(2000);
-            显示日志("🚀 第十五步完成 - 通过备选文字保存");
-            return;
-        }
-    }
-    
-    // 方法3：查找右下角区域（保存按钮通常在右下角）
-    显示日志("🔄 尝试点击右下角区域");
-    var 右下角X = device.width * 0.9;   // 右侧90%
-    var 右下角Y = device.height * 0.9;  // 底部90%
-    
-    click(右下角X, 右下角Y);
-    显示日志("✅ 点击右下角位置: " + 右下角X + ", " + 右下角Y);
-    sleep(2000);
-    
-    显示日志("🚀 第十五步完成 - 已尝试保存操作");
 }
 
 function 执行第十六步() {
     显示日志("➡️ 执行第十六步：点击下一步按钮");
-    
-    // 方法1：直接查找下一步文字
     var 下一步按钮 = text("下一步").findOne(3000) || desc("下一步").findOne(3000);
-    
     if (下一步按钮) {
         显示日志("🎯 找到下一步按钮");
         var 边界 = 下一步按钮.bounds();
         click(边界.centerX(), 边界.centerY());
         显示日志("✅ 点击下一步按钮成功");
         sleep(2000);
-        显示日志("🚀 第十六步完成 - 下一步操作成功");
-        return;
+    } else {
+        显示日志("❌ 未找到下一步按钮");
     }
-    
-    // 方法2：查找其他可能的下一步文字
-    var 其他下一步文字 = ["继续", "下一步骤", "Next", "Continue", "Skip"];
-    for (var i = 0; i < 其他下一步文字.length; i++) {
-        var 文字 = 其他下一步文字[i];
-        var 按钮 = text(文字).findOne(1000) || desc(文字).findOne(1000);
-        if (按钮) {
-            显示日志("🎯 找到下一步按钮: " + 文字);
-            var 边界 = 按钮.bounds();
-            click(边界.centerX(), 边界.centerY());
-            显示日志("✅ 点击下一步按钮成功");
-            sleep(2000);
-            显示日志("🚀 第十六步完成 - 通过备选文字下一步");
-            return;
-        }
-    }
-    
-    // 方法3：查找右下角区域（下一步按钮通常在右下角）
-    显示日志("🔄 尝试点击右下角区域");
-    var 右下角X = device.width * 0.9;   // 右侧90%
-    var 右下角Y = device.height * 0.9;  // 底部90%
-    
-    click(右下角X, 右下角Y);
-    显示日志("✅ 点击右下角位置: " + 右下角X + ", " + 右下角Y);
-    sleep(2000);
-    
-    显示日志("🚀 第十六步完成 - 已尝试下一步操作");
 }
 
 function 执行第十七步() {
     显示日志("📤 执行第十七步：点击发作品按钮");
-    
-    // 方法1：直接查找发作品文字
     var 发作品按钮 = text("发作品").findOne(3000) || desc("发作品").findOne(3000);
-    
     if (发作品按钮) {
         显示日志("🎯 找到发作品按钮");
         var 边界 = 发作品按钮.bounds();
         click(边界.centerX(), 边界.centerY());
         显示日志("✅ 点击发作品按钮成功");
         sleep(2000);
-        显示日志("🚀 第十七步完成 - 发作品操作成功");
-        return;
+    } else {
+        显示日志("❌ 未找到发作品按钮");
     }
-    
-    // 方法2：查找其他可能的发布文字
-    var 其他发布文字 = ["发布", "发表", "上传", "发布作品", "Publish", "Post", "Share"];
-    for (var i = 0; i < 其他发布文字.length; i++) {
-        var 文字 = 其他发布文字[i];
-        var 按钮 = text(文字).findOne(1000) || desc(文字).findOne(1000);
-        if (按钮) {
-            显示日志("🎯 找到发布按钮: " + 文字);
-            var 边界 = 按钮.bounds();
-            click(边界.centerX(), 边界.centerY());
-            显示日志("✅ 点击发布按钮成功");
-            sleep(2000);
-            显示日志("🚀 第十七步完成 - 通过备选文字发布");
-            return;
-        }
-    }
-    
-    // 方法3：查找右下角区域（发布按钮通常在右下角）
-    显示日志("🔄 尝试点击右下角区域");
-    var 右下角X = device.width * 0.9;   // 右侧90%
-    var 右下角Y = device.height * 0.9;  // 底部90%
-    
-    click(右下角X, 右下角Y);
-    显示日志("✅ 点击右下角位置: " + 右下角X + ", " + 右下角Y);
-    sleep(2000);
-    
-    显示日志("🚀 第十七步完成 - 已尝试发布操作");
 }
 
 function 执行第十八步() {
     显示日志("↩️ 执行第十八步：循环查找返回剪映按钮");
-    
     var 找到返回剪映 = false;
     var 开始时间 = new Date().getTime();
     var 超时时间 = 120000; // 2分钟
@@ -984,7 +964,6 @@ function 执行第十八步() {
 
 function 执行第十九步() {
     显示日志("📱 执行第十九步：循环查找分享到抖音按钮");
-    
     var 找到分享按钮 = false;
     var 开始时间 = new Date().getTime();
     var 超时时间 = 120000; // 2分钟
@@ -1018,8 +997,6 @@ function 执行第十九步() {
     }
 }
 
-
-
 function 执行第二十步() {
     显示日志("🔄 执行第二十步：循环执行第7-19步");
     显示日志("📊 开始循环，总共 " + 循环次数 + " 次");
@@ -1042,7 +1019,6 @@ function 执行第二十步() {
         执行第十八步();
         执行第十九步();
         
-        // 如果不是最后一次循环，等待一下再继续
         if (当前循环 < 循环次数) {
             显示日志("⏳ 等待3秒后开始下一次循环...");
             sleep(3000);
@@ -1050,110 +1026,9 @@ function 执行第二十步() {
     }
     
     显示日志("🎉 第二十步完成 - 所有循环执行完毕！");
-    显示日志("🏁 总共完成 " + 循环次数 + " 次循环");
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// === 预留步骤函数（11-20步）===
-
-
-
-
-// 主程序
-function 主程序() {
-    try {
-        if (调试模式) {
-            显示日志("🔧 调试模式 - 直接执行第" + 直接跳转到步骤 + "步");
-            
-            switch(直接跳转到步骤) {
-                case 1: 执行第一步(); break;
-                case 2: 执行第二步(); break;
-                case 3: 执行第三步(); break;
-                case 4: 执行第四步(); break;
-                case 5: 执行第五步(); break;
-                case 6: 执行第六步(); break;
-                case 7: 执行第七步(); break;
-                case 8: 执行第八步(); break;
-                case 9: 执行第九步(); break;
-                case 10: 执行第十步(); break;
-                case 11: 执行第十一步(); break;
-                case 12: 执行第十二步(); break;
-                case 13: 执行第十三步(); break;
-                case 14: 执行第十四步(); break;
-                case 15: 执行第十五步(); break;
-                case 16: 执行第十六步(); break;
-                case 17: 执行第十七步(); break;
-                case 18: 执行第十八步(); break;
-                case 19: 执行第十九步(); break;
-                case 20: 执行第二十步(); break;
-                default:
-                    显示日志("❌ 未知的步骤编号: " + 直接跳转到步骤);
-            }
-            return;
-        }
-        
-        // === 完整脚本开始 ===
-        显示日志("🎬 完整脚本开始执行");
-        执行第一步();
-        执行第二步();
-        执行第三步();
-        执行第四步();
-        执行第五步();
-        执行第六步();
-        执行第七步();
-        执行第八步();
-        执行第九步();
-        执行第十步();
-        执行第十一步();
-        执行第十二步();
-        执行第十三步();
-        执行第十四步();
-        执行第十五步();
-        执行第十六步();
-        执行第十七步();
-        执行第十八步();
-        执行第十九步();
-        执行第二十步();
-        
-        显示日志("🎉 所有步骤执行完成！");
-        显示日志("🏁 脚本执行结束");
-
-    } catch (e) {
-        显示日志("❌ 脚本执行出错: " + e);
-    }
-}
-
-// 启动界面
-显示日志("✅ 脚本加载完成");
-显示日志("💡 使用说明：");
-显示日志("1. 点击步骤按钮选择调试步骤");
-显示日志("2. 点击'完整运行'执行全部");
-显示日志("3. 点击'停止脚本'退出");
-显示日志("4. 蓝色按钮为当前选中步骤");
-
-// 保持悬浮窗显示
-while(true) {
+// 保持脚本运行
+while (true) {
     sleep(1000);
 }
